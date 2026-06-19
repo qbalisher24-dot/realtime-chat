@@ -19,8 +19,6 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
-    console.log("Registering:", { email, username });
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -29,8 +27,6 @@ export default function RegisterPage() {
       },
     });
 
-    console.log("SignUp result:", { data, error });
-
     if (error) {
       setError(error.message);
       setLoading(false);
@@ -38,13 +34,11 @@ export default function RegisterPage() {
     }
 
     if (data.user) {
-      console.log("User created:", data.user.id);
       const { error: profileError } = await supabase.from("profiles").upsert({
         id: data.user.id,
         username,
         email,
       });
-      console.log("Profile insert:", { error: profileError });
     }
 
     router.push("/chat");
@@ -52,51 +46,72 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950">
-      <div className="w-full max-w-md p-8 bg-gray-900 rounded-2xl shadow-xl border border-gray-800">
-        <h1 className="text-2xl font-bold text-center text-white mb-6">
-          Ro&apos;yxatdan o&apos;tish
-        </h1>
-        <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Foydalanuvchi nomi"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Parol (kamida 6 ta belgi)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            minLength={6}
-            required
-          />
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-8 animate-scale-in">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-gradient tracking-tight">
+            Ro&apos;yxatdan o&apos;tish
+          </h1>
+          <p className="text-white/40">Yangi hisob yarating</p>
+        </div>
+
+        <form onSubmit={handleRegister} className="glass-strong rounded-3xl p-8 space-y-5">
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="Foydalanuvchi nomi"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-5 py-4 glass-input rounded-2xl text-white placeholder-white/30 text-base"
+              required
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-5 py-4 glass-input rounded-2xl text-white placeholder-white/30 text-base"
+              required
+            />
+            <input
+              type="password"
+              placeholder="Parol (kamida 6 ta belgi)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-5 py-4 glass-input rounded-2xl text-white placeholder-white/30 text-base"
+              minLength={6}
+              required
+            />
+          </div>
+
           {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
+            <div className="glass rounded-2xl px-4 py-3 border-red-500/30 bg-red-500/10">
+              <p className="text-red-400 text-sm text-center">{error}</p>
+            </div>
           )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+            className="w-full py-4 glass-btn rounded-2xl text-white font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Kutilmoqda..." : "Ro&apos;yxatdan o&apos;tish"}
+            {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Kutilmoqda...
+              </span>
+            ) : (
+              "Ro&apos;yxatdan o&apos;tish"
+            )}
           </button>
         </form>
-        <p className="text-center text-gray-400 mt-6">
+
+        <p className="text-center text-white/30 text-sm">
           Hisobingiz bormi?{" "}
-          <Link href="/auth/login" className="text-blue-400 hover:underline">
+          <Link
+            href="/auth/login"
+            className="text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
+          >
             Kirish
           </Link>
         </p>

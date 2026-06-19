@@ -34,42 +34,63 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950">
-      <div className="w-full max-w-md p-8 bg-gray-900 rounded-2xl shadow-xl border border-gray-800">
-        <h1 className="text-2xl font-bold text-center text-white mb-6">
-          Kirish
-        </h1>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Parol"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            required
-          />
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-8 animate-scale-in">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-gradient tracking-tight">
+            Kirish
+          </h1>
+          <p className="text-white/40">Hisobingizga kiring</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="glass-strong rounded-3xl p-8 space-y-5">
+          <div className="space-y-4">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-5 py-4 glass-input rounded-2xl text-white placeholder-white/30 text-base"
+              required
+            />
+            <input
+              type="password"
+              placeholder="Parol"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-5 py-4 glass-input rounded-2xl text-white placeholder-white/30 text-base"
+              required
+            />
+          </div>
+
           {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
+            <div className="glass rounded-2xl px-4 py-3 border-red-500/30 bg-red-500/10">
+              <p className="text-red-400 text-sm text-center">{error}</p>
+            </div>
           )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+            className="w-full py-4 glass-btn rounded-2xl text-white font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Kutilmoqda..." : "Kirish"}
+            {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Kutilmoqda...
+              </span>
+            ) : (
+              "Kirish"
+            )}
           </button>
         </form>
-        <p className="text-center text-gray-400 mt-6">
+
+        <p className="text-center text-white/30 text-sm">
           Hisobingiz yo&apos;qmi?{" "}
-          <Link href="/auth/register" className="text-blue-400 hover:underline">
+          <Link
+            href="/auth/register"
+            className="text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
+          >
             Ro&apos;yxatdan o&apos;tish
           </Link>
         </p>
