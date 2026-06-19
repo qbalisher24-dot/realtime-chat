@@ -140,14 +140,8 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
             filter: `conversation_id=eq.${conversationId}`,
           },
           async (payload) => {
-            const { data } = await supabase
-              .from("messages")
-              .select("*")
-              .eq("id", payload.new.id)
-              .single();
-
-            if (data) {
-              const enriched = await enrichMessages([data as Message]);
+            if (payload.new) {
+              const enriched = await enrichMessages([payload.new as Message]);
               setMessages((prev) => {
                 if (prev.some((m) => m.id === enriched[0].id)) return prev;
                 return [...prev, enriched[0]];
