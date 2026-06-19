@@ -59,7 +59,7 @@ export default function ChatPage() {
   if (!userId) return null;
 
   const sidebarContent = (
-    <div className="flex-1 overflow-hidden flex flex-col glass-strong rounded-3xl">
+    <div className="flex-1 overflow-hidden flex flex-col glass-strong rounded-none sm:rounded-3xl">
       <Sidebar
         onOpenChat={handleOpenChat}
         onCreateGroup={() => setShowCreateGroup(true)}
@@ -77,7 +77,7 @@ export default function ChatPage() {
   );
 
   const chatContent = selectedChat ? (
-    <div className="h-full glass-strong rounded-3xl overflow-hidden">
+    <div className="h-full glass-strong rounded-none sm:rounded-3xl overflow-hidden">
       <ChatWindow
         key={selectedChat}
         conversationId={selectedChat}
@@ -89,7 +89,7 @@ export default function ChatPage() {
       />
     </div>
   ) : (
-    <div className="h-full glass-strong rounded-3xl flex items-center justify-center">
+    <div className="h-full glass-strong rounded-none sm:rounded-3xl flex items-center justify-center">
       <div className="text-center space-y-4 animate-fade-in">
         <div className="w-20 h-20 rounded-3xl glass-strong flex items-center justify-center mx-auto">
           <svg className="w-10 h-10 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,7 +103,7 @@ export default function ChatPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col sm:flex-row">
+    <div className="h-[100dvh] flex flex-col sm:flex-row">
       {/* Mobile: chat list yoki chat window */}
       <div className="flex-1 flex flex-col sm:hidden">
         {selectedChat ? (
@@ -118,7 +118,7 @@ export default function ChatPage() {
       </div>
 
       {/* Desktop: sidebar + chat */}
-      <div className="hidden sm:flex h-full p-4 gap-4">
+      <div className="hidden sm:flex h-full w-full p-4 gap-4">
         <div className="w-80 shrink-0 flex flex-col">
           {sidebarContent}
         </div>

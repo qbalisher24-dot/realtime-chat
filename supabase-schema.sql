@@ -126,10 +126,18 @@ CREATE POLICY "Members: view" ON conversation_members FOR SELECT USING (
   is_conversation_member(conversation_id)
 );
 CREATE POLICY "Members: insert" ON conversation_members FOR INSERT WITH CHECK (
-  user_id = auth.uid()
+  user_id = auth.uid() OR
+  EXISTS (
+    SELECT 1 FROM conversations
+    WHERE id = conversation_id AND created_by = auth.uid()
+  )
 );
 CREATE POLICY "Members: delete" ON conversation_members FOR DELETE USING (
-  user_id = auth.uid()
+  user_id = auth.uid() OR
+  EXISTS (
+    SELECT 1 FROM conversations
+    WHERE id = conversation_id AND created_by = auth.uid()
+  )
 );
 
 -- 11) Messages policies
