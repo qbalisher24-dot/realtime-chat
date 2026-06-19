@@ -98,36 +98,40 @@ export default function ChatList({ userId, selectedChatId, onSelect, refreshKey 
 
     fetchConversations();
 
-    const channel = supabase
-      .channel(`chat_list_updates:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "messages",
-        },
-        () => {
-          fetchConversations();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "conversation_members",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          fetchConversations();
-        }
-      )
-      .subscribe();
+    try {
+      const channel = supabase
+        .channel(`chat_list_updates:${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "messages",
+          },
+          () => {
+            fetchConversations();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "conversation_members",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            fetchConversations();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (err) {
+      console.error("Realtime subscription error in ChatList:", err);
+    }
   }, [userId, supabase, refreshKey]);
 
   const getConvName = (conv: ConversationWithDetails): string => {

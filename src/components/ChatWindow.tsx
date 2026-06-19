@@ -124,63 +124,70 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
 
     fetchMessages();
 
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        async (payload) => {
-          const { data } = await supabase
-            .from("messages")
-            .select("*")
-            .eq("id", payload.new.id)
-            .single();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let typingChannel: ReturnType<typeof supabase.channel> | null = null;
 
-          if (data) {
-            const enriched = await enrichMessages([data as Message]);
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === enriched[0].id)) return prev;
-              return [...prev, enriched[0]];
-            });
+    try {
+      channel = supabase
+        .channel(`messages:${conversationId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          async (payload) => {
+            const { data } = await supabase
+              .from("messages")
+              .select("*")
+              .eq("id", payload.new.id)
+              .single();
+
+            if (data) {
+              const enriched = await enrichMessages([data as Message]);
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === enriched[0].id)) return prev;
+                return [...prev, enriched[0]];
+              });
+            }
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
-        }
-      )
-      .subscribe();
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "messages",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+          }
+        )
+        .subscribe();
 
-    const typingChannel = supabase
-      .channel(`typing:${conversationId}`)
-      .on("broadcast", { event: "typing" }, (payload) => {
-        if (payload.payload.user_id !== userId) {
-          setOtherTyping(true);
-        }
-      })
-      .on("broadcast", { event: "stop_typing" }, (payload) => {
-        if (payload.payload.user_id !== userId) {
-          setOtherTyping(false);
-        }
-      })
-      .subscribe();
+      typingChannel = supabase
+        .channel(`typing:${conversationId}`)
+        .on("broadcast", { event: "typing" }, (payload) => {
+          if (payload.payload.user_id !== userId) {
+            setOtherTyping(true);
+          }
+        })
+        .on("broadcast", { event: "stop_typing" }, (payload) => {
+          if (payload.payload.user_id !== userId) {
+            setOtherTyping(false);
+          }
+        })
+        .subscribe();
+    } catch (err) {
+      console.error("Realtime subscription error in ChatWindow:", err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(typingChannel);
+      if (channel) supabase.removeChannel(channel);
+      if (typingChannel) supabase.removeChannel(typingChannel);
     };
   }, [conversationId, supabase]);
 
