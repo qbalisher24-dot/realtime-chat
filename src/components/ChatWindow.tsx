@@ -23,6 +23,7 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
   const [otherTyping, setOtherTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const enrichMessages = async (rawMessages: Message[]): Promise<Message[]> => {
     const userIds = [...new Set(rawMessages.map((m) => m.user_id))];
@@ -124,12 +125,12 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
 
     fetchMessages();
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let typingChannel: ReturnType<typeof supabase.channel> | null = null;
+    // Single consolidated channel for both messages and typing
+    const chatChannel = supabase.channel(`chat:${conversationId}`);
+    channelRef.current = chatChannel;
 
     try {
-      channel = supabase
-        .channel(`messages:${conversationId}`)
+      chatChannel
         .on(
           "postgres_changes",
           {
@@ -166,10 +167,6 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
             setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
           }
         )
-        .subscribe();
-
-      typingChannel = supabase
-        .channel(`typing:${conversationId}`)
         .on("broadcast", { event: "typing" }, (payload) => {
           if (payload.payload.user_id !== userId) {
             setOtherTyping(true);
@@ -186,35 +183,27 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
     }
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
-      if (typingChannel) supabase.removeChannel(typingChannel);
+      if (chatChannel) {
+        supabase.removeChannel(chatChannel);
+      }
+      channelRef.current = null;
     };
-  }, [conversationId, supabase]);
+  }, [conversationId, supabase, userId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, otherTyping]);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-
-  useEffect(() => {
-    typingChannelRef.current = supabase.channel(`typing:${conversationId}`);
-    return () => {
-      if (typingChannelRef.current) {
-        supabase.removeChannel(typingChannelRef.current);
-      }
-    };
-  }, [conversationId, supabase]);
 
   const handleTyping = () => {
-    if (!typingChannelRef.current) return;
-    typingChannelRef.current.send({ type: "broadcast", event: "typing", payload: { user_id: userId } });
+    if (!channelRef.current) return;
+    channelRef.current.send({ type: "broadcast", event: "typing", payload: { user_id: userId } });
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      if (typingChannelRef.current) {
-        typingChannelRef.current.send({ type: "broadcast", event: "stop_typing", payload: { user_id: userId } });
+      if (channelRef.current) {
+        channelRef.current.send({ type: "broadcast", event: "stop_typing", payload: { user_id: userId } });
       }
     }, 2000);
   };

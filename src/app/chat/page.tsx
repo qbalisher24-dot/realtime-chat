@@ -76,7 +76,7 @@ export default function ChatPage() {
     </div>
   );
 
-  const chatContent = selectedChat ? (
+  const desktopChatContent = selectedChat ? (
     <div className="h-full glass-strong rounded-none sm:rounded-3xl overflow-hidden">
       <ChatWindow
         key={selectedChat}
@@ -102,17 +102,30 @@ export default function ChatPage() {
     </div>
   );
 
+  const mobileChatContent = selectedChat ? (
+    <div className="h-full glass-strong rounded-none overflow-hidden">
+      <ChatWindow
+        key={selectedChat}
+        conversationId={selectedChat}
+        userId={userId}
+        onBack={() => {
+          setSelectedChat(null);
+          window.history.pushState({}, "", "/chat");
+        }}
+      />
+    </div>
+  ) : null;
+
   return (
     <div className="h-[100dvh] flex flex-col sm:flex-row">
       {/* Mobile: chat list yoki chat window */}
-      <div className="flex-1 flex flex-col sm:hidden">
-        {selectedChat ? (
+      <div className="flex-1 flex flex-col sm:hidden relative overflow-hidden">
+        <div className={`flex-1 flex flex-col ${selectedChat ? "hidden" : "flex"}`}>
+          {sidebarContent}
+        </div>
+        {selectedChat && (
           <div className="flex-1 flex flex-col animate-slide-up">
-            {chatContent}
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col">
-            {sidebarContent}
+            {mobileChatContent}
           </div>
         )}
       </div>
@@ -123,7 +136,7 @@ export default function ChatPage() {
           {sidebarContent}
         </div>
         <div className="flex-1 min-w-0">
-          {chatContent}
+          {desktopChatContent}
         </div>
       </div>
 
