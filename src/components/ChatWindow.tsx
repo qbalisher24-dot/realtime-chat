@@ -20,6 +20,7 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
   const [members, setMembers] = useState<ConversationMember[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [otherTyping, setOtherTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
@@ -163,14 +164,41 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
       )
       .subscribe();
 
+    const typingChannel = supabase
+      .channel(`typing:${conversationId}`)
+      .on("broadcast", { event: "typing" }, (payload) => {
+        if (payload.payload.user_id !== userId) {
+          setOtherTyping(true);
+        }
+      })
+      .on("broadcast", { event: "stop_typing" }, (payload) => {
+        if (payload.payload.user_id !== userId) {
+          setOtherTyping(false);
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(typingChannel);
     };
   }, [conversationId, supabase]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, otherTyping]);
+
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTyping = () => {
+    const channel = supabase.channel(`typing:${conversationId}`);
+    channel.send({ type: "broadcast", event: "typing", payload: { user_id: userId } });
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      channel.send({ type: "broadcast", event: "stop_typing", payload: { user_id: userId } });
+    }, 2000);
+  };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,14 +238,14 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
     if (conversation?.type === "direct" && otherUser) {
       return {
         name: otherUser.username,
-        subtitle: otherUser.online ? "Online" : "Offline",
+        subtitle: otherTyping ? "Yozmoqda..." : (otherUser.online ? "Online" : "Offline"),
         online: otherUser.online,
         src: otherUser.avatar_url,
       };
     }
     return {
       name: conversation?.name || "Noma'lum",
-      subtitle: `${members.length + 1} a'zo`,
+      subtitle: otherTyping ? "Yozmoqda..." : `${members.length + 1} a'zo`,
       online: undefined,
       src: conversation?.avatar_url,
     };
@@ -306,6 +334,17 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
               );
             })
           )}
+          {otherTyping && (
+            <div className="flex justify-start animate-fade-in">
+              <div className="glass-strong px-4 py-3 rounded-3xl">
+                <div className="flex gap-1.5 items-center">
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -351,7 +390,10 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              handleTyping();
+            }}
             placeholder="Xabar yozing..."
             className="flex-1 px-4 py-3 glass-input rounded-2xl text-white placeholder-white/30 text-sm"
           />
