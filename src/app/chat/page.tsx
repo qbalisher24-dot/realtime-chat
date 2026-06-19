@@ -15,7 +15,6 @@ export default function ChatPage() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -34,7 +33,6 @@ export default function ChatPage() {
 
   const handleOpenChat = (conversationId: string) => {
     setSelectedChat(conversationId);
-    setShowMobileSidebar(false);
     window.history.pushState({}, "", `/chat?id=${conversationId}`);
   };
 
@@ -60,113 +58,75 @@ export default function ChatPage() {
 
   if (!userId) return null;
 
-  return (
-    <>
-      {/* Desktop layout */}
-      <div className="h-screen hidden sm:flex p-4 gap-4">
-        <div className="w-80 shrink-0 flex flex-col">
-          <div className="flex-1 overflow-hidden flex flex-col glass-strong rounded-3xl">
-            <Sidebar
-              onOpenChat={handleOpenChat}
-              onCreateGroup={() => setShowCreateGroup(true)}
-              onCreateChannel={() => setShowCreateChannel(true)}
-            />
-            <div className="flex-1 overflow-hidden">
-              <ChatList
-                userId={userId}
-                selectedChatId={selectedChat}
-                onSelect={handleChatSelect}
-                refreshKey={refreshKey}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {selectedChat ? (
-            <div className="h-full glass-strong rounded-3xl overflow-hidden">
-              <ChatWindow
-                key={selectedChat}
-                conversationId={selectedChat}
-                userId={userId}
-                onBack={() => {
-                  setSelectedChat(null);
-                  window.history.pushState({}, "", "/chat");
-                }}
-              />
-            </div>
-          ) : (
-            <div className="h-full glass-strong rounded-3xl flex items-center justify-center">
-              <div className="text-center space-y-4 animate-fade-in">
-                <div className="w-20 h-20 rounded-3xl glass-strong flex items-center justify-center mx-auto">
-                  <svg className="w-10 h-10 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <p className="text-white/20 text-lg font-medium">Chat tanlang</p>
-                <p className="text-white/10 text-sm">Suhbatlar ro&apos;yxatidan birini tanlang</p>
-              </div>
-            </div>
-          )}
-        </div>
+  const sidebarContent = (
+    <div className="flex-1 overflow-hidden flex flex-col glass-strong rounded-3xl">
+      <Sidebar
+        onOpenChat={handleOpenChat}
+        onCreateGroup={() => setShowCreateGroup(true)}
+        onCreateChannel={() => setShowCreateChannel(true)}
+      />
+      <div className="flex-1 overflow-hidden">
+        <ChatList
+          userId={userId}
+          selectedChatId={selectedChat}
+          onSelect={handleChatSelect}
+          refreshKey={refreshKey}
+        />
       </div>
+    </div>
+  );
 
-      {/* Mobile layout */}
-      <div className="sm:hidden h-screen flex flex-col">
+  const chatContent = selectedChat ? (
+    <div className="h-full glass-strong rounded-3xl overflow-hidden">
+      <ChatWindow
+        key={selectedChat}
+        conversationId={selectedChat}
+        userId={userId}
+        onBack={() => {
+          setSelectedChat(null);
+          window.history.pushState({}, "", "/chat");
+        }}
+      />
+    </div>
+  ) : (
+    <div className="h-full glass-strong rounded-3xl flex items-center justify-center">
+      <div className="text-center space-y-4 animate-fade-in">
+        <div className="w-20 h-20 rounded-3xl glass-strong flex items-center justify-center mx-auto">
+          <svg className="w-10 h-10 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </div>
+        <p className="text-white/20 text-lg font-medium">Chat tanlang</p>
+        <p className="text-white/10 text-sm">Suhbatlar ro&apos;yxatidan birini tanlang</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="h-screen flex flex-col sm:flex-row">
+      {/* Mobile: chat list yoki chat window */}
+      <div className="flex-1 flex flex-col sm:hidden">
         {selectedChat ? (
-          <div className="h-full flex flex-col animate-slide-up">
-            <ChatWindow
-              key={selectedChat}
-              conversationId={selectedChat}
-              userId={userId}
-              onBack={() => {
-                setSelectedChat(null);
-                window.history.pushState({}, "", "/chat");
-              }}
-            />
+          <div className="flex-1 flex flex-col animate-slide-up">
+            {chatContent}
           </div>
         ) : (
-          <div className="h-full flex flex-col">
-            <Sidebar
-              onOpenChat={handleOpenChat}
-              onCreateGroup={() => setShowCreateGroup(true)}
-              onCreateChannel={() => setShowCreateChannel(true)}
-            />
-            <div className="flex-1 overflow-hidden">
-              <ChatList
-                userId={userId}
-                selectedChatId={selectedChat}
-                onSelect={handleChatSelect}
-                refreshKey={refreshKey}
-              />
-            </div>
+          <div className="flex-1 flex flex-col">
+            {sidebarContent}
           </div>
         )}
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {showMobileSidebar && (
-        <div className="sm:hidden fixed inset-0 z-40 animate-fade-in">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowMobileSidebar(false)} />
-          <div className="relative w-80 h-full glass-strong rounded-r-3xl overflow-hidden flex flex-col animate-slide-left">
-            <Sidebar
-              onOpenChat={handleOpenChat}
-              onCreateGroup={() => setShowCreateGroup(true)}
-              onCreateChannel={() => setShowCreateChannel(true)}
-            />
-            <div className="flex-1 overflow-hidden">
-              <ChatList
-                userId={userId}
-                selectedChatId={selectedChat}
-                onSelect={handleChatSelect}
-                refreshKey={refreshKey}
-              />
-            </div>
-          </div>
+      {/* Desktop: sidebar + chat */}
+      <div className="hidden sm:flex h-full p-4 gap-4">
+        <div className="w-80 shrink-0 flex flex-col">
+          {sidebarContent}
         </div>
-      )}
+        <div className="flex-1 min-w-0">
+          {chatContent}
+        </div>
+      </div>
 
-      {/* Modals */}
       <CreateGroupModal
         isOpen={showCreateGroup}
         onClose={() => setShowCreateGroup(false)}
@@ -181,6 +141,6 @@ export default function ChatPage() {
         type="channel"
         userId={userId}
       />
-    </>
+    </div>
   );
 }

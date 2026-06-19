@@ -189,14 +189,26 @@ export default function ChatWindow({ conversationId, userId, onBack }: ChatWindo
   }, [messages, otherTyping]);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    typingChannelRef.current = supabase.channel(`typing:${conversationId}`);
+    return () => {
+      if (typingChannelRef.current) {
+        supabase.removeChannel(typingChannelRef.current);
+      }
+    };
+  }, [conversationId, supabase]);
 
   const handleTyping = () => {
-    const channel = supabase.channel(`typing:${conversationId}`);
-    channel.send({ type: "broadcast", event: "typing", payload: { user_id: userId } });
+    if (!typingChannelRef.current) return;
+    typingChannelRef.current.send({ type: "broadcast", event: "typing", payload: { user_id: userId } });
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      channel.send({ type: "broadcast", event: "stop_typing", payload: { user_id: userId } });
+      if (typingChannelRef.current) {
+        typingChannelRef.current.send({ type: "broadcast", event: "stop_typing", payload: { user_id: userId } });
+      }
     }, 2000);
   };
 
